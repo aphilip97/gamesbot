@@ -1,0 +1,27 @@
+{
+  "name": "lifebot",
+  "version": "0.0.1",
+  "description": "A bot that you can ping to let everyone on the server know that you're still alive.",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aphilip97/lifebot.git"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "node",
+    "javascript",
+    "command",
+    "api"
+  ],
+  "author": "Athul Philip",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/aphilip97/lifebot/issues"
+  },
+  "homepage": "https://github.com/aphilip97/lifebot#readme"
+}
