@@ -1,3 +1,4 @@
+import express from 'express';
 import Discord from 'discord.js';
 
 import commandHandler from './commands/index.js';
@@ -11,3 +12,10 @@ client.once('ready', () => {
 client.on('message', commandHandler);
 
 client.login(process.env.BOT_TOKEN);
+
+const app = express();
+const port = process.env.PORT || 3000;
+
+app.listen(port, () => {
+  console.log(`LifeBot is listening on port ${port}`);
+});
