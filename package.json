@@ -11,7 +11,8 @@
     "start": "node -r dotenv/config ./dist/index.js",
     "dev": "nodemon -r dotenv/config ./dist/index.js",
     "test": "jest --detectOpenHandles --runInBand --coverage",
-    "test:watch": "jest --detectOpenHandles --runInBand --coverage --watchAll"
+    "test:watch": "jest --detectOpenHandles --runInBand --coverage --watchAll",
+    "prepare": "husky install"
   },
   "dependencies": {
     "discord.js": "^12.5.1",
