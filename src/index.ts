@@ -6,12 +6,35 @@ const throwMissingEnvVarError = (key: string) => {
   throw new Error(`Missing '${key}' environment variable.`);
 };
 
-if (process.env['BOT_TOKEN'] === '') throwMissingEnvVarError('BOT_TOKEN');
-if (process.env['GUILD_ID'] === '') throwMissingEnvVarError('GUILD_ID');
-if (process.env['TEST_CHANNEL_ID'] === '') throwMissingEnvVarError('TEST_CHANNEL_ID');
-if (process.env['SPAM_CHANNEL_ID'] === '') throwMissingEnvVarError('SPAM_CHANNEL_ID');
-if (process.env['MAINTENANCE_MODE'] === '') throwMissingEnvVarError('MAINTENANCE_MODE');
-if (process.env['NODE_ENV'] === '') throwMissingEnvVarError('NODE_ENV');
+if (
+  process.env.hasOwnProperty('BOT_TOKEN') === false
+  || process.env['BOT_TOKEN'] === void 0
+) throwMissingEnvVarError('BOT_TOKEN');
+
+if (
+  process.env.hasOwnProperty('GUILD_ID') === false
+  || process.env['GUILD_ID'] === void 0
+) throwMissingEnvVarError('GUILD_ID');
+
+if (
+  process.env.hasOwnProperty('TEST_CHANNEL_ID') === false
+  || process.env['TEST_CHANNEL_ID'] === void 0
+) throwMissingEnvVarError('TEST_CHANNEL_ID');
+
+if (
+  process.env.hasOwnProperty('SPAM_CHANNEL_ID') === false
+  || process.env['SPAM_CHANNEL_ID'] === void 0
+) throwMissingEnvVarError('SPAM_CHANNEL_ID');
+
+if (
+  process.env.hasOwnProperty('MAINTENANCE_MODE') === false
+  || process.env['MAINTENANCE_MODE'] === void 0
+) throwMissingEnvVarError('MAINTENANCE_MODE');
+
+if (
+  process.env.hasOwnProperty('NODE_ENV') === false
+  || process.env['NODE_ENV'] === void 0
+) throwMissingEnvVarError('NODE_ENV');
 
 const client: Client = new Client();
 
