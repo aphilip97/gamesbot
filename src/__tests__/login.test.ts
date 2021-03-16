@@ -1,6 +1,6 @@
 import { Client } from 'discord.js';
 
-describe('gamesbot', () => {
+describe('startup', () => {
 
   it('logs in', async () => {
     const client = new Client();
@@ -9,15 +9,10 @@ describe('gamesbot', () => {
       expect(token).toEqual(process.env['BOT_TOKEN']);
     } catch (err) {
       console.error(err);
-      throw err;
     } finally {
       client.destroy();
     }
   });
-
-});
-
-describe('gamesbot', () => {
 
   it('throws error if token is missing', async () => {
     const client = new Client();

@@ -3,7 +3,7 @@ import { Client } from 'discord.js';
 import commandParser from './commands/index.js';
 
 const client: Client = new Client();
-client.once('ready', () => console.log('LifeBot is ready! :D\n'));
+client.once('ready', () => console.log('gamesbot is ready! :D\n'));
 client.on('message', commandParser);
 
 const exit = () => process.exit();

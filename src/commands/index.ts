@@ -3,34 +3,33 @@ import { Handler } from 'types/index.js';
 
 import ping from './ping.js';
 
-const commands: { [key: string]: Handler } = {
+// Prefix
+const p = '-';
+
+const cmds: { [key: string]: Handler } = {
   ping,
 };
 
 const async_no_op = async () => {};
 
-export default async (message: Message) => {
-  /*
-    TODO: Filter out messages from bots using message.author.bot
-  */
-  const regex = /^-[a-zA-Z0-9]+(\s(.+))?$/;
-  if (message.guild?.id === process.env['GUILD_ID']) {
-    const matches = message.content.match(regex);
-    if (matches === null) return;
-    const args = message.content.split(' ');
-    const commandName = args.shift()?.substr(1) ?? '';
-    if (commandName in commands) {
-      if (
-        process.env['MAINTENANCE_MODE'] === 'true'
-        && message.channel.id !== process.env['TEST_CHANNEL_ID']
-      ) {
-        console.debug('In maintenance mode. Sending default response.');
-        return message.channel.send(
-          `:robot: I'm in maintenance mode right now.`
-        );
-      }
-      const command = commands[commandName] ?? async_no_op;
-      if (command) return command(message, ...args);
+export default async (msg: Message) => {
+  if (msg.content.startsWith(p) === false) return;
+
+  const args = msg.content.slice(p.length).trim().split(/ +/);
+
+  const cmdName = args.shift()?.toLowerCase() ?? '';
+
+  if (cmdName in cmds) {
+    if (
+      process.env['MAINTENANCE_MODE'] === 'true'
+      && msg.channel.id !== process.env['TEST_CHANNEL_ID']
+    ) {
+      return msg.channel.send(
+        `:robot: I'm in maintenance mode right now.`
+      );
     }
+    const cmd = cmds[cmdName] ?? async_no_op;
+    if (cmd) return cmd(msg, ...args);
   }
+
 };
