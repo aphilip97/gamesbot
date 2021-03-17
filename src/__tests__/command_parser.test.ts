@@ -1,16 +1,15 @@
 import {
   Client,
-  Guild,
   TextChannel,
   Message,
-  SnowflakeUtil,
+  CollectorFilter,
+  AwaitMessagesOptions,
 } from 'discord.js';
 import commandParser from '../commands/index';
 
 let client: Client;
-let theServer: Guild;
-let testChannel: TextChannel;
-let spamChannel: TextChannel;
+let testCh: TextChannel;
+let spamCh: TextChannel;
 
 describe('command parser', () => {
 
@@ -18,27 +17,32 @@ describe('command parser', () => {
 
     client = new Client({
       messageCacheLifetime: 60 * 1000,
+      messageCacheMaxSize: 200,
+      messageSweepInterval: 200,
+      messageEditHistoryMaxSize: 200,
     });
 
-    theServer = new Guild(client, {
-      id: process.env['GUILD_ID'],
-    });
-
-    testChannel = new TextChannel(theServer, {
-      id: process.env['TEST_CHANNEL_ID'],
-      type: 'text',
-    });
-
-    spamChannel = new TextChannel(theServer, {
-      id: process.env['SPAM_CHANNEL_ID'],
-      type: 'text',
-    });
-
-    client.guilds.cache.set(theServer.id, theServer);
-    client.channels.cache.set(testChannel.id, testChannel);
-    client.channels.cache.set(spamChannel.id, spamChannel);
+    client.on('message', commandParser);
 
     await client.login(process.env['BOT_TOKEN']);
+
+    if (process.env['TEST_CHANNEL_ID'] !== void 0) {
+      const allChannels = client.channels;
+      testCh = await allChannels.fetch(
+        process.env['TEST_CHANNEL_ID'],
+        true,
+        false
+      ) as TextChannel;
+    }
+
+    if (process.env['SPAM_CHANNEL_ID'] !== void 0) {
+      const allChannels = client.channels;
+      spamCh = await allChannels.fetch(
+        process.env['SPAM_CHANNEL_ID'],
+        true,
+        false
+      ) as TextChannel;
+    }
 
   });
 
@@ -47,94 +51,109 @@ describe('command parser', () => {
   });
 
   afterEach(() => {
-    testChannel.messages.cache.clear();
-    spamChannel.messages.cache.clear();
+    testCh.messages.cache.clear();
+    spamCh.messages.cache.clear();
   });
+
+  const sendReceive = async (
+    msgContent: string,
+    channel: TextChannel,
+    replyFilter: CollectorFilter,
+    awaitMsgOptions?: AwaitMessagesOptions,
+  ) => {
+    await channel.send(msgContent);
+    return await channel.awaitMessages(replyFilter, {
+      errors: ['time'],
+      max: 1,
+      maxProcessed: 1,
+      time: 1000,
+      // idle: 5000,
+      // dispose: false,
+      ...awaitMsgOptions
+    });
+  };
 
   it('should parse command alone', async () => {
 
-    const message = new Message(client, {
-      id: SnowflakeUtil.generate(),
-      content: '-ping',
-    }, testChannel);
+    const filter: CollectorFilter = (msg: Message) => (
+      msg.content === 'pong'
+    );
 
-    await commandParser(message);
+    const messages = await sendReceive('-ping', testCh, filter);
 
-    const [ reply ] = testChannel.messages.cache.last(1);
+    const reply = messages.find(msg => msg.content === 'pong');
+
     expect(reply?.content).toEqual('pong');
-    expect(client.user?.lastMessage?.content).toEqual('pong');
 
   });
 
   it('should parse command with argument', async () => {
 
-    const message = new Message(client, {
-      id: SnowflakeUtil.generate(),
-      content: '-ping me',
-    }, testChannel);
+    const filter: CollectorFilter = (msg: Message) => (
+      msg.content.includes('aaaarrrrgggghhhh!!!!')
+    );
 
-    await commandParser(message);
+    const messages = await sendReceive('-ping me', testCh, filter);
 
-    const [ reply ] = testChannel.messages.cache.last(1);
-    expect(reply?.content).toEqual('aaaarrrrgggghhhh!!!!');
-    expect(client.user?.lastMessage?.content).toEqual('aaaarrrrgggghhhh!!!!');
+    const reply = messages.first();
+
+    expect(reply?.content).toContain('aaaarrrrgggghhhh!!!!');
 
   });
 
   it('should ignore commands with the wrong prefix', async () => {
 
-    const message = new Message(client, {
-      id: SnowflakeUtil.generate(),
-      content: '$ping',
-    }, testChannel);
+    const filter: CollectorFilter = () => true;
 
-    await commandParser(message);
+    const messages = await sendReceive('$ping', testCh, filter, {
+      errors: [],
+    });
 
-    const [ reply ] = testChannel.messages.cache.last(1);
+    const reply = messages.first();
+
     expect(reply).toBeUndefined();
 
   });
 
   it('should inform user that it is in maintenance mode', async () => {
 
-    const message = new Message(client, {
-      id: SnowflakeUtil.generate(),
-      content: '-ping',
-    }, spamChannel);
+    const filter: CollectorFilter = (msg: Message) => (
+      msg.content === `:robot: I'm in maintenance mode right now.`
+    );
 
-    await commandParser(message);
+    const messages = await sendReceive('-ping', spamCh, filter);
 
     const expectedReply = `:robot: I'm in maintenance mode right now.`;
-    const [ reply ] = spamChannel.messages.cache.last(1);
+
+    const reply = messages.first();
     expect(reply?.content).toEqual(expectedReply);
-    expect(client.user?.lastMessage?.content).toEqual(expectedReply);
 
   });
 
   it('should ignore a message with just the prefix', async () => {
 
-    const message = new Message(client, {
-      id: SnowflakeUtil.generate(),
-      content: '-',
-    }, testChannel);
+    const filter: CollectorFilter = () => true;
 
-    await commandParser(message);
+    const messages = await sendReceive('-', testCh, filter, {
+      errors: [],
+    });
 
-    const [ reply ] = testChannel.messages.cache.last(1);
+    const reply = messages.first();
+
     expect(reply).toBeUndefined();
 
   });
 
   it(`should ignore a command that doesn't exist`, async () => {
 
-    const message = new Message(client, {
-      id: SnowflakeUtil.generate(),
-      content: '-foo',
-    }, testChannel);
+    const filter: CollectorFilter = () => true;
 
-    await commandParser(message);
+    const messages = await sendReceive('-foo', testCh, filter, {
+      errors: [],
+    });
 
-    const [ reply ] = testChannel.messages.cache.last(1);
+    const reply = messages.first();
+
     expect(reply).toBeUndefined();
 
   });
