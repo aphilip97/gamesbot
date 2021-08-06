@@ -6,7 +6,10 @@ const client: Client = new Client();
 client.once('ready', () => console.log('gamesbot is ready! :D\n'));
 client.on('message', commandParser);
 
-const exit = () => process.exit();
+const exit = (err: any, origin: any) => {
+  console.log(err, origin);
+  process.exit();
+};
 
 const cleanup = () => {
   console.log('\n[DEBUG] Cleaning up...');

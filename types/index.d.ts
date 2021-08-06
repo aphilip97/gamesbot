@@ -1,5 +1,18 @@
 import { Message } from 'discord.js';
 
-export type Ping = (message: Message, ...args: string[]) => Promise<Message>;
+type Handler = (message: Message, ...args: string[]) => Promise<Message>;
 
-type Handler = Ping;
+type Lookup = {
+  [key: string]: null;
+};
+
+type Category = {
+  data: Lookup;
+  mutableData: Lookup;
+  check: (val: string) => boolean;
+  refreshData: () => void;
+};
+
+type Categories = {
+  [key: string]: Category;
+};

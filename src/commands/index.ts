@@ -1,35 +1,42 @@
 import { Message } from 'discord.js';
 import { Handler } from 'types/index.js';
 
+import { PREFIX as p } from '../constants';
 import ping from './ping.js';
-
-// Prefix
-const p = '-';
+import concentration from './concentration/concentration';
 
 const cmds: { [key: string]: Handler } = {
   ping,
+  concentration,
 };
 
-const async_no_op = async () => {};
+const notFound = async (msg: Message) => msg.channel.send(
+  `Command not recognized.`
+);
 
 export default async (msg: Message) => {
+
   if (msg.content.startsWith(p) === false) return;
 
   const args = msg.content.slice(p.length).trim().split(/ +/);
 
   const cmdName = args.shift()?.toLowerCase() ?? '';
 
-  if (cmdName in cmds) {
-    if (
-      process.env['MAINTENANCE_MODE'] === 'true'
-      && msg.channel.id !== process.env['TEST_CHANNEL_ID']
-    ) {
-      return msg.channel.send(
-        `:robot: I'm in maintenance mode right now.`
-      );
-    }
-    const cmd = cmds[cmdName] ?? async_no_op;
-    if (cmd) return cmd(msg, ...args);
+  if (
+    process.env['MAINTENANCE_MODE'] === 'true'
+    && msg.channel.id !== process.env['TEST_CHANNEL_ID']
+  ) {
+
+    await msg.channel.send(
+      `:robot: I'm in maintenance mode right now.`
+    );
+
+    return;
+
   }
+
+  const cmd = cmds[cmdName] ?? notFound;
+
+  await cmd(msg, ...args);
 
 };

@@ -1,11 +1,10 @@
 import {
   Client,
   TextChannel,
-  Message,
-  CollectorFilter,
-  AwaitMessagesOptions,
 } from 'discord.js';
+
 import commandParser from '../commands/index';
+import { sendReceive } from '../utils/testing';
 
 let client: Client;
 let testCh: TextChannel;
@@ -31,7 +30,7 @@ describe('command parser', () => {
       testCh = await allChannels.fetch(
         process.env['TEST_CHANNEL_ID'],
         true,
-        false
+        false,
       ) as TextChannel;
     }
 
@@ -40,7 +39,7 @@ describe('command parser', () => {
       spamCh = await allChannels.fetch(
         process.env['SPAM_CHANNEL_ID'],
         true,
-        false
+        false,
       ) as TextChannel;
     }
 
@@ -55,106 +54,99 @@ describe('command parser', () => {
     spamCh.messages.cache.clear();
   });
 
-  const sendReceive = async (
-    msgContent: string,
-    channel: TextChannel,
-    replyFilter: CollectorFilter,
-    awaitMsgOptions?: AwaitMessagesOptions,
-  ) => {
-    await channel.send(msgContent);
-    return await channel.awaitMessages(replyFilter, {
-      errors: ['time'],
-      max: 1,
-      maxProcessed: 1,
-      time: 1000,
-      // idle: 5000,
-      // dispose: false,
-      ...awaitMsgOptions
-    });
-  };
-
   it('should parse command alone', async () => {
 
-    const filter: CollectorFilter = (msg: Message) => (
-      msg.content === 'pong'
+    const messages = await sendReceive(
+      '-ping',
+      testCh
     );
 
-    const messages = await sendReceive('-ping', testCh, filter);
+    const reply = messages.first();
 
-    const reply = messages.find(msg => msg.content === 'pong');
+    const expected = 'pong';
 
-    expect(reply?.content).toEqual('pong');
+    expect(reply?.content).toEqual(expected);
 
   });
 
   it('should parse command with argument', async () => {
 
-    const filter: CollectorFilter = (msg: Message) => (
-      msg.content.includes('aaaarrrrgggghhhh!!!!')
+    const messages = await sendReceive(
+      '-ping me',
+      testCh
     );
-
-    const messages = await sendReceive('-ping me', testCh, filter);
 
     const reply = messages.first();
 
-    expect(reply?.content).toContain('aaaarrrrgggghhhh!!!!');
+    const expected = (
+      `<@${client.user?.id}>, aaaarrrrgggghhhh!!!!`
+    );
+
+    expect(reply?.content).toEqual(expected);
 
   });
 
   it('should ignore commands with the wrong prefix', async () => {
 
-    const filter: CollectorFilter = () => true;
-
-    const messages = await sendReceive('$ping', testCh, filter, {
-      errors: [],
-    });
+    const messages = await sendReceive(
+      '$ping',
+      testCh,
+      void 0,
+      { errors: [], time: 5000, }
+    );
 
     const reply = messages.first();
 
-    expect(reply).toBeUndefined();
+    const expected = void 0;
+
+    expect(reply?.content).toEqual(expected);
 
   });
 
   it('should inform user that it is in maintenance mode', async () => {
 
-    const filter: CollectorFilter = (msg: Message) => (
-      msg.content === `:robot: I'm in maintenance mode right now.`
+    const messages = await sendReceive(
+      '-ping',
+      spamCh
     );
 
-    const messages = await sendReceive('-ping', spamCh, filter);
-
-    const expectedReply = `:robot: I'm in maintenance mode right now.`;
-
     const reply = messages.first();
-    expect(reply?.content).toEqual(expectedReply);
+
+    const expected = (
+      `:robot: I'm in maintenance mode right now.`
+    );
+
+    expect(reply?.content).toEqual(expected);
 
   });
 
   it('should ignore a message with just the prefix', async () => {
 
-    const filter: CollectorFilter = () => true;
-
-    const messages = await sendReceive('-', testCh, filter, {
-      errors: [],
-    });
+    const messages = await sendReceive(
+      '-',
+      testCh
+    );
 
     const reply = messages.first();
 
-    expect(reply).toBeUndefined();
+    const expected = 'Command not recognized.';
+
+    expect(reply?.content).toEqual(expected);
 
   });
 
   it(`should ignore a command that doesn't exist`, async () => {
 
-    const filter: CollectorFilter = () => true;
-
-    const messages = await sendReceive('-foo', testCh, filter, {
-      errors: [],
-    });
+    const messages = await sendReceive(
+      '-foo',
+      testCh
+    );
 
     const reply = messages.first();
 
-    expect(reply).toBeUndefined();
+    const expected = 'Command not recognized.';
+
+    expect(reply?.content).toEqual(expected);
 
   });
 
